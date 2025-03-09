@@ -1,0 +1,120 @@
+/* Top bar styling */
+.topBar {
+    background-color: #1E1E1E;
+    color: white;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Ensure it sticks to the top-left */
+    position: absolute; /* Fixes it at the top */
+    top: 0;
+    left: 0;
+    width: 100%; /* Make sure it spans the full width */
+    height: 4vh;
+    
+    /* Remove margin */
+    margin: 0;
+}
+  
+  /* Button styling */
+  .taskButton {
+    background-color: #9AE19D;
+    color: #1E1E1E;
+    padding: 8px 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #1E1E1E;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* Button Hover & Click Effects */
+.taskButton:hover {
+    background-color: #67c272;
+}
+
+.taskButton:active {
+    transform: scale(0.95);
+}
+
+/* Modal Overlay - Dim Background but NOT full-screen */
+.modalOverlay {
+    position: fixed; /* Keeps it on top of everything */
+    top: 0;
+    left: 0;
+    width: 100vw; /* Full width of viewport */
+    height: 100vh; /* Full height of viewport */
+    background: rgba(0, 0, 0, 0.5); /* Slightly dark background */
+    display: flex;
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+  }
+  
+  /* Modal Window - Fixed Size and Centered */
+  .modalWindow {
+    background: #2C302E;
+    width: 500px; /* Set width */
+    height: 300px; /* Set height */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Adds a shadow for a window effect */
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Required for absolute-positioned close button */
+  }
+  
+  /* Modal Header */
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+  }
+  
+  /* Close Button */
+  .closeButton {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  /* Modal Content */
+  .modalContent {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+  }
+  
+  /* Input Fields */
+  .modalContent input,
+  .modalContent textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  /* Submit Button */
+  .submitButton {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .submitButton:hover {
+    background: #0056b3;
+  }

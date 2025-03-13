@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./dashboard.css";
 
 function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+  const [tasks, setTasks] = useState([]); // Store tasks in state
 
   const openTaskCreationWindow = () => {
     setShowModal(true);
@@ -24,17 +25,35 @@ function Dashboard() {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
-        const tasks = await response.json();
-        console.log("Fetched tasks successfully:", tasks); // Log tasks to console
-        alert(JSON.stringify(tasks, null, 2)); // Show tasks in a readable format in the alert
+        const fetchedTasks = await response.json();
+        console.log("Fetched tasks successfully:", fetchedTasks);
+        setTasks(fetchedTasks); // Update state with fetched tasks
       } else {
         alert("Error fetching tasks");
       }
     } catch (error) {
       console.error("Error:", error);
       alert("Error fetching tasks");
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+  
+      if (response.ok) {
+        console.log("Task deleted:", taskId);
+        setTasks(tasks.filter(task => task.id !== taskId)); // Remove from state
+      } else {
+        alert("Error deleting task");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error deleting task");
     }
   };
 
@@ -60,6 +79,7 @@ function Dashboard() {
         const newTask = await response.json();
         console.log("Task created:", newTask);
         closeTaskCreationWindow(); // Close the modal after successful creation
+        displayTasks(); // Refresh task list after adding a new task
       } else {
         alert("Error creating task");
       }
@@ -69,17 +89,41 @@ function Dashboard() {
     }
   };
 
+  // Fetch tasks on component mount
+  useEffect(() => {
+    displayTasks();
+  }, []);
+
   return (
     <div className="container">
       {/* Top Bar */}
       <div className="topBar">
-        <button className="taskButton" onClick={openTaskCreationWindow}>
+        <button className="topBarButton" onClick={openTaskCreationWindow}>
           Add Task
         </button>
-        <button className="taskButton" onClick={displayTasks}>
-          Fetch tasks
+        <button className="topBarButton" onClick={displayTasks}>
+          Refresh Tasks
         </button>
       </div>
+
+    {/* Task List */}
+    <div className="taskList">
+      {tasks.length > 0 ? (
+        tasks.map((task) => (
+          <div key={task.id} className="taskBar">
+            <div className="taskInfo">
+              <h3>{task.title}</h3>
+              <p>{task.description}</p>
+            </div>
+            <button className="deleteButton" onClick={() => handleDeleteTask(task.id)}>
+              ✖ Delete
+            </button>
+          </div>
+        ))
+      ) : (
+        <p>No tasks found.</p>
+      )}
+    </div>
 
       {/* Task Creation Modal */}
       {showModal && (

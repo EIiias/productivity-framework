@@ -4,7 +4,7 @@
     color: white;
     padding: 16px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     
     /* Ensure it sticks to the top-left */
@@ -13,13 +13,14 @@
     left: 0;
     width: 100%; /* Make sure it spans the full width */
     height: 4vh;
+    gap: 10px;
     
     /* Remove margin */
     margin: 0;
 }
   
   /* Button styling */
-  .taskButton {
+  .topBarButton {
     background-color: #9AE19D;
     color: #1E1E1E;
     padding: 8px 16px;
@@ -31,6 +32,7 @@
     color: #1E1E1E;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
+    margin: 0;
   }
   
   /* Button Hover & Click Effects */

@@ -3,6 +3,8 @@ import "./dashboard.css";
 
 function Dashboard() {
   const [showModal, setShowModal] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
 
   const openTaskCreationWindow = () => {
     setShowModal(true);
@@ -10,6 +12,39 @@ function Dashboard() {
 
   const closeTaskCreationWindow = () => {
     setShowModal(false);
+    setTaskName(""); // Reset task name
+    setTaskDescription(""); // Reset task description
+  };
+
+  const handleCreateTask = async () => {
+    if (!taskName || !taskDescription) {
+      alert("Please provide both a task name and description.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: taskName,
+          description: taskDescription,
+        }),
+      });
+
+      if (response.ok) {
+        const newTask = await response.json();
+        console.log("Task created:", newTask);
+        closeTaskCreationWindow(); // Close the modal after successful creation
+      } else {
+        alert("Error creating task");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error creating task");
+    }
   };
 
   return (
@@ -32,9 +67,20 @@ function Dashboard() {
               </button>
             </div>
             <div className="modalContent">
-              <input type="text" placeholder="Task Name" />
-              <textarea placeholder="Task Description"></textarea>
-              <button className="submitButton">Create Task</button>
+              <input
+                type="text"
+                placeholder="Task Name"
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+              />
+              <textarea
+                placeholder="Task Description"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+              ></textarea>
+              <button className="submitButton" onClick={handleCreateTask}>
+                Create Task
+              </button>
             </div>
           </div>
         </div>

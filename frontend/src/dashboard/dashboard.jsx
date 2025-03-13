@@ -16,6 +16,28 @@ function Dashboard() {
     setTaskDescription(""); // Reset task description
   };
 
+  const displayTasks = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/tasks", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        const tasks = await response.json();
+        console.log("Fetched tasks successfully:", tasks); // Log tasks to console
+        alert(JSON.stringify(tasks, null, 2)); // Show tasks in a readable format in the alert
+      } else {
+        alert("Error fetching tasks");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error fetching tasks");
+    }
+  };
+
   const handleCreateTask = async () => {
     if (!taskName || !taskDescription) {
       alert("Please provide both a task name and description.");
@@ -53,6 +75,9 @@ function Dashboard() {
       <div className="topBar">
         <button className="taskButton" onClick={openTaskCreationWindow}>
           Add Task
+        </button>
+        <button className="taskButton" onClick={displayTasks}>
+          Fetch tasks
         </button>
       </div>
 

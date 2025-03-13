@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
+const { Sequelize, DataTypes } = require("sequelize");
 const cors = require("cors");
 
 const app = express();
@@ -9,44 +9,81 @@ const app = express();
 app.use(cors()); // Allow requests from frontend
 app.use(express.json()); // Parse JSON requests
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+console.log(process.env.DATABASE_URL);
+
+// Connect to PostgreSQL using Sequelize
+const sequelize = new Sequelize("postgres://taskdb:1234@localhost:5432/taskdb", {
+  dialect: "postgres",
+  logging: false, // Set to true if you want to log SQL queries
 });
 
-const db = mongoose.connection;
-db.once("open", () => console.log("Connected to MongoDB"));
+// Test PostgreSQL connection
+sequelize
+  .authenticate()
+  .then(() => console.log("Connected to PostgreSQL"))
+  .catch((error) => console.error("Unable to connect to PostgreSQL:", error));
 
-// Define Task Schema
-const taskSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  createdAt: { type: Date, default: Date.now },
-});
+// Define Task Model
+const Task = sequelize.define(
+  "Task",
+  {
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: Sequelize.NOW,
+    },
+  },
+  {
+    timestamps: false, // Disable automatic `updatedAt` and `createdAt` columns if not needed
+  }
+);
 
-const Task = mongoose.model("Task", taskSchema);
+// Sync the model with the database (create table if it doesn't exist)
+sequelize.sync();
 
 // Routes
 
 // Get all tasks
 app.get("/tasks", async (req, res) => {
-  const tasks = await Task.find();
-  res.json(tasks);
+  try {
+    const tasks = await Task.findAll();
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching tasks" });
+  }
 });
 
 // Create a new task
 app.post("/tasks", async (req, res) => {
   const { title, description } = req.body;
-  const newTask = new Task({ title, description });
-  await newTask.save();
-  res.status(201).json(newTask);
+  try {
+    const newTask = await Task.create({ title, description });
+    res.status(201).json(newTask);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating task" });
+  }
 });
 
 // Delete a task
 app.delete("/tasks/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.json({ message: "Task deleted" });
+  try {
+    const task = await Task.findByPk(req.params.id);
+    if (task) {
+      await task.destroy();
+      res.json({ message: "Task deleted" });
+    } else {
+      res.status(404).json({ message: "Task not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting task" });
+  }
 });
 
 const PORT = process.env.PORT || 5000;

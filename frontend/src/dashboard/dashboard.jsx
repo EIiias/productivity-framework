@@ -19,7 +19,7 @@ function Dashboard() {
 
   const displayTasks = async () => {
     try {
-      const response = await fetch("http://localhost:5000/tasks", {
+      const response = await fetch("http://localhost:5002/tasks", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -41,7 +41,7 @@ function Dashboard() {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      const response = await fetch(`http://localhost:5000/tasks/${taskId}`, {
+      const response = await fetch(`http://localhost:5002/tasks/${taskId}`, {
         method: "DELETE",
       });
   
@@ -64,7 +64,7 @@ function Dashboard() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/tasks", {
+      const response = await fetch("http://localhost:5002/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

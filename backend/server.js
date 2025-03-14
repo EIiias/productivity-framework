@@ -12,7 +12,7 @@ app.use(express.json()); // Parse JSON requests
 console.log(process.env.DATABASE_URL);
 
 // Connect to PostgreSQL using Sequelize
-const sequelize = new Sequelize("postgres://taskdb:1234@localhost:5432/taskdb", {
+const sequelize = new Sequelize("postgres://taskdb:1234@localhost:5001/taskdb", {
   dialect: "postgres",
   logging: false, // Set to true if you want to log SQL queries
 });
@@ -86,5 +86,5 @@ app.delete("/tasks/:id", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

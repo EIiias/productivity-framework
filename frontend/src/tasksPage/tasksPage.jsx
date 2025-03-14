@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import "./tasks.css";
+import "./tasksPage.css";
 
-function Dashboard() {
+function TasksPage() {
   const [showModal, setShowModal] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -158,4 +158,4 @@ function Dashboard() {
   );
 }
 
-export default Tasks;
+export default TasksPage;

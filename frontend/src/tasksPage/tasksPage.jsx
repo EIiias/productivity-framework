@@ -1,19 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './tasksPage.css'
-
-// Re-usable CollapsibleWidget + Modal
-function CollapsibleWidget({ title, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="widget-box">
-      <div className="widget-header" onClick={() => setOpen(!open)}>
-        <h4>{title}</h4>
-        <span className="widget-toggle">{open ? '⬆' : '⬇'}</span>
-      </div>
-      {open && <div className="widget-content">{children}</div>}
-    </div>
-  )
-}
 
 function Modal({ show, onClose, title, children }) {
   if (!show) return null
@@ -40,7 +26,7 @@ export default function TasksPage() {
   const [userName, setUserName] = useState('Lars')
   const [avatarUrl, setAvatarUrl] = useState('https://randomuser.me/api/portraits/men/1.jpg')
 
-  // Oben links: Titel + Subtitle
+  // Uhrzeit-Greeting
   const [greetingText, setGreetingText] = useState('Guten Morgen')
   useEffect(() => {
     const hour = new Date().getHours()
@@ -55,18 +41,20 @@ export default function TasksPage() {
     const t = setTimeout(() => setBatteryTransition(false), 300)
     return () => clearTimeout(t)
   }, [energyLevel])
-
   const batteryColor = energyLevel < 30
     ? '#ff6b6b'
     : energyLevel < 60
       ? '#ffa94d'
       : '#51cf66'
 
-  // activeTab: «Dashboard» vs «Aufgaben»
-  // Hier sind wir auf der Task-Seite => Aufgaben ist active
-  const [activeTab, setActiveTab] = useState('tasks')
+  // Tabs (Alle, Heute, Fällig, Erledigt)
+  const [activeTab, setActiveTab] = useState('alle')  
+  // Filter / Suche
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterPriority, setFilterPriority] = useState('all')
 
-  // Tasks array
+  // Tasks
   const [tasks, setTasks] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [taskTitle, setTaskTitle] = useState('')
@@ -76,6 +64,11 @@ export default function TasksPage() {
   const [taskTags, setTaskTags] = useState('')
   const [taskDeadline, setTaskDeadline] = useState('')
 
+  // Detail Sidebar
+  const [selectedTask, setSelectedTask] = useState(null)
+  const sidebarRef = useRef(null)
+
+  // Fetch Tasks once
   async function fetchTasks() {
     try {
       const res = await fetch('http://localhost:5002/tasks')
@@ -93,23 +86,10 @@ export default function TasksPage() {
     fetchTasks()
   }, [])
 
-  async function handleDeleteTask(id) {
-    try {
-      const res = await fetch(`http://localhost:5002/tasks/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        setTasks(prev => prev.filter(t => t.id !== id))
-      } else {
-        alert('Fehler beim Löschen')
-      }
-    } catch (err) {
-      console.error(err)
-      alert('Verbindungsfehler (Löschen)')
-    }
-  }
-
+  // Neue Task erstellen
   async function handleCreateTask() {
     if (!taskTitle.trim() || !taskDescription.trim()) {
-      alert('Bitte Titel & Beschreibung')
+      alert('Bitte Titel & Beschreibung eingeben.')
       return
     }
     const parsedTags = taskTags.split(',')
@@ -124,7 +104,6 @@ export default function TasksPage() {
       tags: parsedTags,
       deadline: taskDeadline || null
     }
-
     try {
       const res = await fetch('http://localhost:5002/tasks', {
         method: 'POST',
@@ -135,14 +114,88 @@ export default function TasksPage() {
         await fetchTasks()
         closeModal()
       } else {
-        alert('Fehler beim Erstellen')
+        alert('Fehler beim Erstellen der Task.')
       }
     } catch (err) {
       console.error(err)
-      alert('Fehler (Verbindung)')
+      alert('Fehler (Verbindungsproblem)')
     }
   }
 
+  // Quick-Update (z.B. Checkbox -> Erledigt) 
+  async function updateTaskStatus(taskId, newStatus) {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    try {
+      const res = await fetch(`http://localhost:5002/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...task, status: newStatus })
+      })
+      if (res.ok) {
+        fetchTasks()
+      } else {
+        alert('Fehler beim Updaten.')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Löschung
+  async function handleDeleteTask(id) {
+    try {
+      const res = await fetch(`http://localhost:5002/tasks/${id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== id))
+        // Falls gerade die Task im Detail-Sidebar offen war -> schliessen
+        if (selectedTask && selectedTask.id === id) setSelectedTask(null)
+      } else {
+        alert('Fehler beim Löschen')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Verbindungsfehler (Löschen)')
+    }
+  }
+
+  // Detail-Sidebar öffnen
+  function openDetailSidebar(task) {
+    setSelectedTask(task)
+  }
+  // Detail-Sidebar schliessen
+  function closeDetailSidebar() {
+    setSelectedTask(null)
+  }
+
+  // Bearbeitung im Detail-Sidebar speichern
+  async function handleSaveDetail() {
+    if (!selectedTask) return
+    const { id, title, description, status, priority, tags, deadline } = selectedTask
+    try {
+      const res = await fetch(`http://localhost:5002/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title, description, status, priority,
+          tags: Array.isArray(tags) ? tags : [],
+          deadline
+        })
+      })
+      if (res.ok) {
+        await fetchTasks()
+        closeDetailSidebar()
+      } else {
+        alert('Fehler beim Updaten der Task.')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // -- Modal Helpers
   function openModal() {
     setShowModal(true)
   }
@@ -159,203 +212,423 @@ export default function TasksPage() {
     setTaskDeadline('')
   }
 
+  // ------------ Filtering + Tabs ------------
+  const todayStr = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+
+  function filterByTab(task) {
+    switch (activeTab) {
+      case 'heute':
+        // Deadline == heute
+        return task.deadline && task.deadline.substring(0,10) === todayStr
+      case 'faellig':
+        // Deadline < heute, status != Erledigt
+        if (!task.deadline) return false
+        const deadlineDate = new Date(task.deadline)
+        const today = new Date(todayStr) // Zeitanteil = 00:00
+        return deadlineDate < today && task.status !== 'Erledigt'
+      case 'erledigt':
+        return task.status === 'Erledigt'
+      default:
+        // 'alle'
+        return true
+    }
+  }
+
+  function filterBySearch(task) {
+    if (!searchTerm.trim()) return true
+    const lower = searchTerm.toLowerCase()
+    return (
+      task.title.toLowerCase().includes(lower) ||
+      task.description.toLowerCase().includes(lower) ||
+      (task.tags || []).some(tag => tag.toLowerCase().includes(lower))
+    )
+  }
+
+  function filterByStatus(task) {
+    if (filterStatus === 'all') return true
+    return task.status === filterStatus
+  }
+
+  function filterByPriority(task) {
+    if (filterPriority === 'all') return true
+    return task.priority === filterPriority
+  }
+
+  const filteredTasks = tasks.filter(task =>
+    filterByTab(task) &&
+    filterBySearch(task) &&
+    filterByStatus(task) &&
+    filterByPriority(task)
+  )
+
+  // ============ Drag & Drop (ohne extra Library) ============
+  const [draggedTaskId, setDraggedTaskId] = useState(null)
+
+  function handleDragStart(e, taskId) {
+    setDraggedTaskId(taskId)
+  }
+  function handleDragOver(e) {
+    e.preventDefault()
+  }
+  function handleDrop(e, dropTaskId) {
+    e.preventDefault()
+    if (draggedTaskId === null) return
+
+    // Reorder in local state
+    const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId)
+    const dropIndex = tasks.findIndex(t => t.id === dropTaskId)
+    if (draggedIndex === -1 || dropIndex === -1) return
+
+    const newTasks = [...tasks]
+    const [removed] = newTasks.splice(draggedIndex, 1)
+    newTasks.splice(dropIndex, 0, removed)
+    setTasks(newTasks)
+
+    setDraggedTaskId(null)
+  }
+
+  // -------------- RENDER --------------
   return (
     <div className={`tasksPage-container ${darkMode ? 'dark-mode' : ''}`}>
       {/* TOP-BAR */}
       <header className="topbar">
         <div className="topbar-row">
+          {/* Links: Logo */}
           <div className="topbar-left">
-            <div className="topbar-logo-container">
+            <div 
+              className="topbar-logo-container"
+              onClick={() => (window.location.href = '/dashboard')}
+            >
               <h1 className="topbar-logo">Produktivitäts-Framework</h1>
               <p className="topbar-subtitle">{greetingText}, {userName}!</p>
             </div>
-
-            <div className="topbar-tabs">
-              <button
-                onClick={() => (window.location.href = '/dashboard')}
-              >
-                Dashboard
-              </button>
-              <button
-                className="active no-hover-on-active"
-                style={{ cursor: 'default' }}
-              >
-                Aufgaben
-              </button>
-            </div>
           </div>
 
-          {/* Battery + Avatar rechts */}
-          <div className="topbar-energy-container">
-            <div className={`battery-widget ${batteryTransition ? 'battery-animate' : ''}`}>
-              <div className="battery-icon">
-                <div
-                  className="battery-level"
-                  style={{
-                    width: `${energyLevel}%`,
-                    '--battery-color': batteryColor,
-                    background: batteryColor
-                  }}
-                />
+          {/* Tabs in der Mitte */}
+          <div className="topbar-tabs">
+            <button
+              onClick={() => setActiveTab('alle')}
+              className={activeTab === 'alle' ? 'active' : ''}
+            >
+              Alle Aufgaben
+            </button>
+            <button
+              onClick={() => setActiveTab('heute')}
+              className={activeTab === 'heute' ? 'active' : ''}
+            >
+              Heute
+            </button>
+            <button
+              onClick={() => setActiveTab('faellig')}
+              className={activeTab === 'faellig' ? 'active' : ''}
+            >
+              Fällig
+            </button>
+            <button
+              onClick={() => setActiveTab('erledigt')}
+              className={activeTab === 'erledigt' ? 'active' : ''}
+            >
+              Erledigt
+            </button>
+          </div>
+
+          {/* Rechts: Battery, KI, Avatar (Darkmode Toggle) */}
+          <div className="topbar-right">
+            <div className="topbar-energy-container">
+              <div className={`battery-widget ${batteryTransition ? 'battery-animate' : ''}`}>
+                <div className="battery-icon">
+                  <div
+                    className="battery-level"
+                    style={{
+                      width: `${energyLevel}%`,
+                      '--battery-color': batteryColor,
+                      background: batteryColor
+                    }}
+                  />
+                </div>
+                <span className="battery-info">{energyLevel}%</span>
               </div>
-              <span className="battery-info">{energyLevel}%</span>
+              <input
+                className="energy-slider"
+                type="range"
+                min="0"
+                max="100"
+                value={energyLevel}
+                onChange={e => setEnergyLevel(Number(e.target.value))}
+              />
             </div>
-            <input
-              className="energy-slider"
-              type="range"
-              min="0"
-              max="100"
-              value={energyLevel}
-              onChange={e => setEnergyLevel(Number(e.target.value))}
-            />
-          </div>
 
-          <div
-            className="topbar-user"
-            style={{ cursor: 'pointer', marginLeft: '1rem' }}
-            onClick={() => setDarkMode(!darkMode)}
-          >
-            <img src={avatarUrl} alt="Avatar" className="avatar" />
+            {/* KI-Assistent Icon (Platzhalter) */}
+            <div
+              className="ki-assistant-icon"
+              onClick={() => alert('KI-Assistent noch nicht implementiert!')}
+            >
+              KI
+            </div>
+
+            {/* Avatar (Darkmode beim Klick) */}
+            <div
+              className="topbar-user"
+              onClick={() => setDarkMode(!darkMode)}
+            >
+              <img src={avatarUrl} alt="Avatar" className="avatar" />
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Layout: Sidebar + Main */}
-      <div className="layout">
-        <aside className="widgets-column">
-          <CollapsibleWidget title="Aufgabenfortschritt" defaultOpen={true}>
-            <p>Hier könnte man die gleichen Charts wie im Dashboard anzeigen.</p>
-          </CollapsibleWidget>
-
-          <CollapsibleWidget title="Kalender" defaultOpen={false}>
-            <p>Mini-Kalender oder Sonstiges übernehmen – je nach Bedarf.</p>
-          </CollapsibleWidget>
-
-          <CollapsibleWidget title="Einstellungen" defaultOpen={false}>
-            <p>Auch hier könnte man dieselben User-Settings übernehmen.</p>
-          </CollapsibleWidget>
-        </aside>
-
-        <main className="main-area">
-          <h2>Aufgaben</h2>
-          <button onClick={openModal} style={{ marginBottom: '1rem' }}>
-            + Neue Aufgabe
-          </button>
-
-          {tasks.length === 0 ? (
-            <p>Keine Aufgaben vorhanden.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  style={{
-                    background: darkMode ? '#444' : '#fff',
-                    color: darkMode ? '#eee' : '#333',
-                    border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    padding: '0.6rem 0.8rem',
-                    position: 'relative'
-                  }}
-                >
-                  <button
-                    style={{
-                      background: '#dc3545',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      padding: '0.3rem 0.6rem',
-                      cursor: 'pointer',
-                      position: 'absolute',
-                      top: '0.4rem',
-                      right: '0.5rem'
-                    }}
-                    onClick={() => handleDeleteTask(task.id)}
-                  >
-                    ✖
-                  </button>
-                  <h3 style={{ margin: '0.2rem 0' }}>{task.title}</h3>
-                  <p style={{ margin: '0.2rem 0' }}>{task.description}</p>
-                  <p style={{ margin: '0.2rem 0' }}>Status: {task.status}</p>
-                  <p style={{ margin: '0.2rem 0' }}>Priorität: {task.priority}</p>
-                  {task.deadline && (
-                    <p style={{ margin: '0.2rem 0' }}>
-                      Deadline: {task.deadline.substring(0,10)}
-                    </p>
-                  )}
-                  {task.tags && task.tags.length > 0 && (
-                    <p style={{ margin: '0.2rem 0' }}>
-                      Tags: {task.tags.join(', ')}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* MODAL */}
-      <Modal show={showModal} onClose={closeModal} title="Neue Aufgabe">
-        <label>
-          Titel:
+      {/* MAIN CONTENT */}
+      <main className="main-content">
+        {/* Filter und Suche */}
+        <div className="filters-container">
           <input
             type="text"
-            value={taskTitle}
-            onChange={e => setTaskTitle(e.target.value)}
+            placeholder="Task suchen…"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
           />
-        </label>
-        <label>
-          Beschreibung:
-          <textarea
-            rows={2}
-            value={taskDescription}
-            onChange={e => setTaskDescription(e.target.value)}
-          />
-        </label>
-        <label>
-          Status:
           <select
-            value={taskStatus}
-            onChange={e => setTaskStatus(e.target.value)}
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
           >
+            <option value="all">Status (alle)</option>
             <option value="Offen">Offen</option>
             <option value="In Bearbeitung">In Bearbeitung</option>
             <option value="Erledigt">Erledigt</option>
           </select>
-        </label>
-        <label>
-          Priorität:
           <select
-            value={taskPriority}
-            onChange={e => setTaskPriority(e.target.value)}
+            value={filterPriority}
+            onChange={e => setFilterPriority(e.target.value)}
           >
+            <option value="all">Priorität (alle)</option>
             <option value="Hoch">Hoch</option>
             <option value="Mittel">Mittel</option>
             <option value="Niedrig">Niedrig</option>
           </select>
-        </label>
-        <label>
-          Tags (Komma-getrennt):
-          <input
-            type="text"
-            value={taskTags}
-            onChange={e => setTaskTags(e.target.value)}
-          />
-        </label>
-        <label>
-          Deadline:
-          <input
-            type="date"
-            value={taskDeadline}
-            onChange={e => setTaskDeadline(e.target.value)}
-          />
-        </label>
+        </div>
+
+        {/* Task-Liste */}
+        <div className="tasks-list">
+          {filteredTasks.length === 0 ? (
+            <p>Keine passenden Aufgaben gefunden.</p>
+          ) : (
+            filteredTasks.map(task => {
+              const isCompleted = task.status === 'Erledigt'
+              const isOverdue = task.deadline 
+                && task.deadline.substring(0,10) < todayStr 
+                && !isCompleted
+
+              const statusClass = (task.status === 'Offen')
+                ? 'status-offen'
+                : (task.status === 'In Bearbeitung')
+                  ? 'status-bearbeitung'
+                  : 'status-erledigt'
+
+              const prioClass = (task.priority === 'Hoch')
+                ? 'priority-hoch'
+                : (task.priority === 'Mittel')
+                  ? 'priority-mittel'
+                  : 'priority-niedrig'
+
+              return (
+                <div
+                  key={task.id}
+                  className={`task-row ${isCompleted ? 'completed' : ''}`}
+                  draggable
+                  onDragStart={e => handleDragStart(e, task.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={e => handleDrop(e, task.id)}
+                >
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={isCompleted}
+                    onChange={() => updateTaskStatus(task.id, isCompleted ? 'Offen' : 'Erledigt')}
+                  />
+                  {/* Drag-Handle */}
+                  <span className="drag-handle">⇅</span>
+
+                  {/* Titel */}
+                  <div 
+                    className="task-title"
+                    onClick={() => openDetailSidebar(task)}
+                  >
+                    {task.title}
+                  </div>
+
+                  {/* Deadline */}
+                  {task.deadline && (
+                    <div
+                      className={`task-deadline ${isOverdue ? 'overdue' : ''}`}
+                    >
+                      {task.deadline.substring(0,10)}
+                    </div>
+                  )}
+
+                  {/* Status + Priority Badges */}
+                  <span className={`status-badge ${statusClass}`}>
+                    {task.status}
+                  </span>
+                  <span className={`priority-badge ${prioClass}`}>
+                    {task.priority}
+                  </span>
+
+                  {/* Edit / Delete Buttons */}
+                  <div className="task-actions">
+                    <button
+                      title="Bearbeiten"
+                      onClick={() => openDetailSidebar(task)}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      title="Löschen"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </main>
+
+      {/* FAB: Neue Task */}
+      <button className="new-task-fab" onClick={openModal}>+</button>
+
+      {/* MODAL: Neue Task */}
+      <Modal show={showModal} onClose={closeModal} title="Neue Aufgabe">
+        <label>Titel:</label>
+        <input
+          type="text"
+          value={taskTitle}
+          onChange={e => setTaskTitle(e.target.value)}
+        />
+        <label>Beschreibung:</label>
+        <textarea
+          rows={2}
+          value={taskDescription}
+          onChange={e => setTaskDescription(e.target.value)}
+        />
+        <label>Status:</label>
+        <select
+          value={taskStatus}
+          onChange={e => setTaskStatus(e.target.value)}
+        >
+          <option value="Offen">Offen</option>
+          <option value="In Bearbeitung">In Bearbeitung</option>
+          <option value="Erledigt">Erledigt</option>
+        </select>
+        <label>Priorität:</label>
+        <select
+          value={taskPriority}
+          onChange={e => setTaskPriority(e.target.value)}
+        >
+          <option value="Hoch">Hoch</option>
+          <option value="Mittel">Mittel</option>
+          <option value="Niedrig">Niedrig</option>
+        </select>
+        <label>Tags (Komma-getrennt):</label>
+        <input
+          type="text"
+          value={taskTags}
+          onChange={e => setTaskTags(e.target.value)}
+        />
+        <label>Deadline:</label>
+        <input
+          type="date"
+          value={taskDeadline}
+          onChange={e => setTaskDeadline(e.target.value)}
+        />
         <button onClick={handleCreateTask}>
           Hinzufügen
         </button>
       </Modal>
+
+      {/* DETAIL-SIDEBAR */}
+      <div className={`detail-sidebar ${selectedTask ? 'open' : ''}`} ref={sidebarRef}>
+        {selectedTask && (
+          <>
+            <div className="detail-sidebar-header">
+              <h2>Aufgabe bearbeiten</h2>
+              <button onClick={closeDetailSidebar}>×</button>
+            </div>
+            <div className="detail-sidebar-body">
+              <label>Titel</label>
+              <input
+                type="text"
+                value={selectedTask.title}
+                onChange={e =>
+                  setSelectedTask({ ...selectedTask, title: e.target.value })
+                }
+              />
+              <label>Beschreibung</label>
+              <textarea
+                rows={3}
+                value={selectedTask.description}
+                onChange={e =>
+                  setSelectedTask({ ...selectedTask, description: e.target.value })
+                }
+              />
+              <label>Status</label>
+              <select
+                value={selectedTask.status}
+                onChange={e =>
+                  setSelectedTask({ ...selectedTask, status: e.target.value })
+                }
+              >
+                <option value="Offen">Offen</option>
+                <option value="In Bearbeitung">In Bearbeitung</option>
+                <option value="Erledigt">Erledigt</option>
+              </select>
+
+              <label>Priorität</label>
+              <select
+                value={selectedTask.priority}
+                onChange={e =>
+                  setSelectedTask({ ...selectedTask, priority: e.target.value })
+                }
+              >
+                <option value="Hoch">Hoch</option>
+                <option value="Mittel">Mittel</option>
+                <option value="Niedrig">Niedrig</option>
+              </select>
+
+              <label>Tags</label>
+              <input
+                type="text"
+                value={(selectedTask.tags || []).join(', ')}
+                onChange={e =>
+                  setSelectedTask({
+                    ...selectedTask,
+                    tags: e.target.value.split(',').map(t => t.trim())
+                  })
+                }
+              />
+
+              <label>Deadline</label>
+              <input
+                type="date"
+                value={selectedTask.deadline ? selectedTask.deadline.substring(0,10) : ''}
+                onChange={e =>
+                  setSelectedTask({ ...selectedTask, deadline: e.target.value })
+                }
+              />
+            </div>
+            <div className="detail-sidebar-footer">
+              <button className="btn-secondary" onClick={closeDetailSidebar}>
+                Abbrechen
+              </button>
+              <button className="btn-primary" onClick={handleSaveDetail}>
+                Speichern
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

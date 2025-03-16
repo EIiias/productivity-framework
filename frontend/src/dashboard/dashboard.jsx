@@ -298,7 +298,7 @@ function TimeRangeTabs({ timeRange, setTimeRange, t }) {
   )
 }
 
-/* Hilfsfn => deadline in X Tagen? */
+/* Hilfsfn => Deadline in X Tagen? */
 function isWithinDays(deadline, days) {
   if (!deadline) return false
   const dl = new Date(deadline)
@@ -327,13 +327,18 @@ function Aufgabenfortschritt({ tasks, darkMode, colorScheme, t }) {
   const offenCount = filtered.filter(x => x.status === 'Offen').length
   const inBearbCount = filtered.filter(x => x.status === 'In Bearbeitung').length
   const erledigtCount = filtered.filter(x => x.status === 'Erledigt').length
-  const total = filtered.length
 
-  const data = [
+  let data = [
     { name: t.statuses['Offen'], value: offenCount, color: '#0d6efd' },
     { name: t.statuses['In Bearbeitung'], value: inBearbCount, color: '#fd7e14' },
     { name: t.statuses['Erledigt'], value: erledigtCount, color: '#198754' }
   ]
+
+  // «Immer Diagramm anzeigen», auch wenn 0
+  const totalCount = offenCount + inBearbCount + erledigtCount
+  if (totalCount === 0) {
+    data = [{ name: 'Keine Aufgaben', value: 1, color: '#ccc' }]
+  }
 
   return (
     <div className="widget-box">
@@ -342,11 +347,15 @@ function Aufgabenfortschritt({ tasks, darkMode, colorScheme, t }) {
       </div>
       <div className="widget-content">
         <TimeRangeTabs timeRange={timeRange} setTimeRange={setTimeRange} t={t} />
-        <p style={{ marginBottom: '0.6rem' }}>
-          {t.statuses['Offen']}: {offenCount} | {t.statuses['In Bearbeitung']}: {inBearbCount} | {t.statuses['Erledigt']}: {erledigtCount}
-          <br />
-          (Summe: {total})
-        </p>
+        {totalCount > 0 ? (
+          <p style={{ marginBottom: '0.6rem' }}>
+            {t.statuses['Offen']}: {offenCount} | {t.statuses['In Bearbeitung']}: {inBearbCount} | {t.statuses['Erledigt']}: {erledigtCount}
+            <br />
+            (Summe: {offenCount + inBearbCount + erledigtCount})
+          </p>
+        ) : (
+          <p style={{ marginBottom: '0.6rem' }}>Keine Aufgaben im ausgewählten Zeitraum.</p>
+        )}
 
         <div style={{ width: '100%', height: 180 }}>
           <ResponsiveContainer>
@@ -405,10 +414,15 @@ function Gewohnheitsfortschritt({ habits, darkMode, t }) {
   const done = filtered.filter(h => h.completed).length
   const open = total - done
 
-  const data = [
+  let data = [
     { name: t.statuses['Offen'], value: open, color: '#0d6efd' },
     { name: t.statuses['Erledigt'], value: done, color: '#198754' }
   ]
+
+  // Auch hier: immer Diagramm zeigen
+  if (total === 0) {
+    data = [{ name: 'Keine Gewohnheiten', value: 1, color: '#ccc' }]
+  }
 
   return (
     <div className="widget-box">
@@ -417,11 +431,15 @@ function Gewohnheitsfortschritt({ habits, darkMode, t }) {
       </div>
       <div className="widget-content">
         <TimeRangeTabs timeRange={timeRange} setTimeRange={setTimeRange} t={t} />
-        <p style={{ marginBottom: '0.6rem' }}>
-          {t.statuses['Offen']}: {open} | {t.statuses['Erledigt']}: {done}
-          <br />
-          (Summe: {total})
-        </p>
+        {total > 0 ? (
+          <p style={{ marginBottom: '0.6rem' }}>
+            {t.statuses['Offen']}: {open} | {t.statuses['Erledigt']}: {done}
+            <br />
+            (Summe: {total})
+          </p>
+        ) : (
+          <p style={{ marginBottom: '0.6rem' }}>Keine Gewohnheiten im ausgewählten Zeitraum.</p>
+        )}
 
         <div style={{ width: '100%', height: 180 }}>
           <ResponsiveContainer>
@@ -1121,7 +1139,7 @@ export default function Dashboard() {
               ))}
             </div>
             <button className="focus-add-btn" onClick={() => setShowFocusModal(true)}>
-              {t.newHabit}
+              {t.newHabit} {/* «+ Neu» – passt hier als Platzhalter */}
             </button>
             <p style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>
               {t.progress}: {focusPercent}%
@@ -1150,13 +1168,13 @@ export default function Dashboard() {
             darkMode={darkMode}
           />
 
-          {/* Einstellungen => mehr Abstände */}
+          {/* Einstellungen */}
           <CollapsibleWidget title={t.widgetSettings} defaultOpen={false}>
             <div className="user-settings" style={{ paddingTop: '0.6rem' }}>
               <h5 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1rem' }}>
                 {t.userSettingsGeneral}
               </h5>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userNameLabel}:
                 <input
                   type="text"
@@ -1164,7 +1182,7 @@ export default function Dashboard() {
                   onChange={e => setUserName(e.target.value)}
                 />
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userAvatarUrlLabel}:
                 <input
                   type="text"
@@ -1172,7 +1190,7 @@ export default function Dashboard() {
                   onChange={e => setAvatarUrl(e.target.value)}
                 />
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userOrUpload}
                 <input
                   type="file"
@@ -1180,7 +1198,7 @@ export default function Dashboard() {
                   onChange={handleAvatarUpload}
                 />
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userDarkmode}:
                 <input
                   type="checkbox"
@@ -1188,7 +1206,7 @@ export default function Dashboard() {
                   onChange={e => setDarkMode(e.target.checked)}
                 />
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userColorScheme}:
                 <input
                   type="color"
@@ -1202,7 +1220,7 @@ export default function Dashboard() {
               <h5 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1rem' }}>
                 {t.userSettingsSystem}
               </h5>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.widgetLanguage}:
                 <select
                   value={language}
@@ -1213,11 +1231,11 @@ export default function Dashboard() {
                   <option value="fr">Français</option>
                 </select>
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userNotifications}
                 <input type="checkbox" defaultChecked />
               </label>
-              <label style={{ marginBottom: '1rem' }}>
+              <label>
                 {t.userDateFormat}
                 <select defaultValue="DD.MM.YYYY">
                   <option value="DD.MM.YYYY">TT.MM.JJJJ</option>
@@ -1260,7 +1278,7 @@ export default function Dashboard() {
                     </select>
                     <select
                       value={taskFilterPriority}
-                      onChange={e => setTaskFilterPriority(e.target.value)}
+                      onChange={e => setTaskPriority(e.target.value)}
                     >
                       <option value="all">{t.all}</option>
                       <option value="Hoch">{t.priorities['Hoch']}</option>
@@ -1391,7 +1409,6 @@ export default function Dashboard() {
                                 <span
                                   className="milestone-delete"
                                   onClick={() => {
-                                    // Temporärer Weg zum Löschen
                                     setGoals(prev => prev.map(x => {
                                       if (x.id === g.id) {
                                         const newArr = [...x.milestones]
@@ -1529,39 +1546,18 @@ export default function Dashboard() {
           />
         </label>
 
-        <label>Status:</label>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ marginRight: '0.8rem' }}>
-            <input
-              type="radio"
-              name="taskstatus"
-              value="Offen"
-              checked={taskStatus === 'Offen'}
-              onChange={() => setTaskStatus('Offen')}
-            />
-            {t.statuses['Offen']}
-          </label>
-          <label style={{ marginRight: '0.8rem' }}>
-            <input
-              type="radio"
-              name="taskstatus"
-              value="In Bearbeitung"
-              checked={taskStatus === 'In Bearbeitung'}
-              onChange={() => setTaskStatus('In Bearbeitung')}
-            />
-            {t.statuses['In Bearbeitung']}
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="taskstatus"
-              value="Erledigt"
-              checked={taskStatus === 'Erledigt'}
-              onChange={() => setTaskStatus('Erledigt')}
-            />
-            {t.statuses['Erledigt']}
-          </label>
-        </div>
+        {/* Status jetzt als Select statt Radio-Buttons */}
+        <label>
+          Status:
+          <select
+            value={taskStatus}
+            onChange={e => setTaskStatus(e.target.value)}
+          >
+            <option value="Offen">{t.statuses['Offen']}</option>
+            <option value="In Bearbeitung">{t.statuses['In Bearbeitung']}</option>
+            <option value="Erledigt">{t.statuses['Erledigt']}</option>
+          </select>
+        </label>
 
         <label>
           Priorität:
@@ -1615,7 +1611,7 @@ export default function Dashboard() {
         </button>
       </Modal>
 
-      {/* Goals => meilensteine */}
+      {/* Goals => Meilensteine */}
       <Modal
         show={showGoalModal}
         onClose={() => setShowGoalModal(false)}
@@ -1683,28 +1679,31 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <button onClick={() => {
-          if (!goalTitle.trim()) return
-          if (editingGoal) {
-            // Update
-            setGoals(prev =>
-              prev.map(g => g.id === editingGoal.id
-                ? { ...g, title: goalTitle, progress: goalProgress, milestones: goalMilestones }
-                : g
+        <button
+          onClick={() => {
+            if (!goalTitle.trim()) return
+            if (editingGoal) {
+              // Update
+              setGoals(prev =>
+                prev.map(g => g.id === editingGoal.id
+                  ? { ...g, title: goalTitle, progress: goalProgress, milestones: goalMilestones }
+                  : g
+                )
               )
-            )
-          } else {
-            // New
-            setGoals([...goals, {
-              id: 'g'+Date.now(),
-              title: goalTitle,
-              progress: goalProgress,
-              milestones: goalMilestones
-            }])
-          }
-          setShowGoalModal(false)
-          setNewMilestone('')
-        }} style={{ marginTop: '1rem' }}>
+            } else {
+              // New
+              setGoals([...goals, {
+                id: 'g'+Date.now(),
+                title: goalTitle,
+                progress: goalProgress,
+                milestones: goalMilestones
+              }])
+            }
+            setShowGoalModal(false)
+            setNewMilestone('')
+          }}
+          style={{ marginTop: '1rem' }}
+        >
           {editingGoal ? t.edit : t.add}
         </button>
       </Modal>

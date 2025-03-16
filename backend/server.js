@@ -1,90 +1,188 @@
-require("dotenv").config();
-const express = require("express");
-const { Sequelize, DataTypes } = require("sequelize");
-const cors = require("cors");
+require('dotenv').config()
+const express = require('express')
+const { Sequelize, DataTypes } = require('sequelize')
+const cors = require('cors')
 
-const app = express();
+const app = express()
 
 // Middleware
-app.use(cors()); // Allow requests from frontend
-app.use(express.json()); // Parse JSON requests
+app.use(cors())
+app.use(express.json())
 
-console.log(process.env.DATABASE_URL);
+// 1) DB-Verbindung anpassen, wenn dein Port/DB anders ist
+const sequelize = new Sequelize(
+  process.env.DATABASE_URL || 'postgres://taskdb:1234@localhost:5001/taskdb',
+  {
+    dialect: 'postgres',
+    logging: true // <--- set to 'true' oder function(msg) => console.log(msg)
+  }
+)
 
-// Connect to PostgreSQL using Sequelize
-const sequelize = new Sequelize("postgres://taskdb:1234@localhost:5001/taskdb", {
-  dialect: "postgres",
-  logging: false, // Set to true if you want to log SQL queries
-});
-
-// Test PostgreSQL connection
+// 2) Verbindung testen
 sequelize
   .authenticate()
-  .then(() => console.log("Connected to PostgreSQL"))
-  .catch((error) => console.error("Unable to connect to PostgreSQL:", error));
+  .then(() => console.log('>>> Verbunden mit PostgreSQL.'))
+  .catch((error) => console.error('Fehler beim Verbinden zu PostgreSQL:', error))
 
-// Define Task Model
+// 3) Tabellenmodell für Task:
 const Task = sequelize.define(
-  "Task",
+  'Task',
   {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
     title: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: false
     },
     description: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: false
     },
-    createdAt: {
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'Offen'
+    },
+    priority: {
+      type: DataTypes.STRING,
+      defaultValue: 'Mittel'
+    },
+    tags: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: []
+    },
+    deadline: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.NOW,
+      allowNull: true
     },
+    // Soft-Delete
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    }
   },
   {
-    timestamps: false, // Disable automatic `updatedAt` and `createdAt` columns if not needed
+    timestamps: true
   }
-);
+)
 
-// Sync the model with the database (create table if it doesn't exist)
-sequelize.sync();
+// 4) Sync mit alter:true, damit neue Spalten hinzukommen, falls schon Tabelle existiert
+sequelize
+  .sync({ alter: true })
+  .then(() => {
+    console.log('>>> DB Sync erfolgreich (Task-Tabelle existiert und wurde ggf. angepasst).')
+  })
+  .catch((err) => console.error('>>> DB Sync-Fehler:', err))
 
-// Routes
-
-// Get all tasks
-app.get("/tasks", async (req, res) => {
+// =============== ROUTES ===============
+app.get('/tasks', async (req, res) => {
   try {
-    const tasks = await Task.findAll();
-    res.json(tasks);
+    // Nur nicht-gelöschte Tasks
+    const tasks = await Task.findAll({
+      where: { deletedAt: null }
+    })
+    res.json(tasks)
   } catch (error) {
-    res.status(500).json({ message: "Error fetching tasks" });
+    console.error(error)
+    res.status(500).json({ message: 'Fehler beim Abrufen der Tasks' })
   }
-});
+})
 
-// Create a new task
-app.post("/tasks", async (req, res) => {
-  const { title, description } = req.body;
+app.post('/tasks', async (req, res) => {
   try {
-    const newTask = await Task.create({ title, description });
-    res.status(201).json(newTask);
+    // Prüfe ankommende Daten:
+    console.log('>>> POST /tasks - req.body =', req.body)
+
+    const { title, description, status, priority, tags, deadline } = req.body
+
+    const newTask = await Task.create({
+      title,
+      description,
+      status: status || 'Offen',
+      priority: priority || 'Mittel',
+      tags: Array.isArray(tags) ? tags : [],
+      deadline: deadline ? new Date(deadline) : null
+    })
+
+    res.status(201).json(newTask)
   } catch (error) {
-    res.status(500).json({ message: "Error creating task" });
+    console.error(error)
+    res.status(500).json({ message: 'Fehler beim Erstellen eines Tasks' })
   }
-});
+})
 
-// Delete a task
-app.delete("/tasks/:id", async (req, res) => {
+app.put('/tasks/:id', async (req, res) => {
   try {
-    const task = await Task.findByPk(req.params.id);
-    if (task) {
-      await task.destroy();
-      res.json({ message: "Task deleted" });
-    } else {
-      res.status(404).json({ message: "Task not found" });
+    console.log('>>> PUT /tasks/:id - req.body =', req.body)
+
+    const { id } = req.params
+    const { title, description, status, priority, tags, deadline } = req.body
+
+    const task = await Task.findByPk(id)
+    if (!task || task.deletedAt) {
+      return res.status(404).json({ message: 'Task nicht gefunden oder gelöscht.' })
     }
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting task" });
-  }
-});
 
-const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    await task.update({
+      title,
+      description,
+      status: status || 'Offen',
+      priority: priority || 'Mittel',
+      tags: Array.isArray(tags) ? tags : [],
+      deadline: deadline ? new Date(deadline) : null
+    })
+    res.json(task)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Fehler beim Updaten des Tasks' })
+  }
+})
+
+// "Soft-Delete" - statt destroy() => deletedAt=now
+app.delete('/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const task = await Task.findByPk(id)
+    if (!task) {
+      return res.status(404).json({ message: 'Task nicht gefunden.' })
+    }
+    if (task.deletedAt) {
+      return res.status(400).json({ message: 'Task ist bereits gelöscht.' })
+    }
+
+    await task.update({ deletedAt: new Date() })
+    console.log('>>> Task soft-gelöscht:', id)
+    res.json({ message: 'Task soft-gelöscht', id })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Fehler beim Löschen eines Tasks' })
+  }
+})
+
+// Undo - deletedAt=null => Task wiederherstellen
+app.post('/tasks/:id/undo', async (req, res) => {
+  try {
+    const { id } = req.params
+    const task = await Task.findByPk(id)
+    if (!task) {
+      return res.status(404).json({ message: 'Task nicht (mehr) gefunden' })
+    }
+    if (!task.deletedAt) {
+      return res.status(400).json({ message: 'Task ist gar nicht gelöscht, Undo nicht nötig.' })
+    }
+
+    await task.update({ deletedAt: null })
+    console.log('>>> Task wiederhergestellt:', id)
+    res.json(task)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Fehler beim Undo-Löschen' })
+  }
+})
+
+const PORT = process.env.PORT || 5002
+app.listen(PORT, () => {
+  console.log(`>>> Server läuft auf Port ${PORT}`)
+})

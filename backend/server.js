@@ -2,12 +2,60 @@ require('dotenv').config()
 const express = require('express')
 const { Sequelize, DataTypes } = require('sequelize')
 const cors = require('cors')
+const https = require('https');
+const WebSocket = require('ws');
+const fs = require('fs');
 
 const app = express()
 
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+/*
+//Setup HTTPS Server for WebSockets & Express
+const server = https.createServer({
+  cert: fs.readFileSync('cert.pem'),
+  key: fs.readFileSync('key.pem')
+}, app);
+*/
+
+// ✅ Attach WebSocket server to the existing HTTPS server (for ws://)
+const ws = new WebSocket.Server({ port: 5003 });
+
+console.log("✅ WebSocket server is running on ws://localhost:5003");
+
+// Handle Incoming Connections
+ws.on("connection", (ws, req) => {
+  console.log(`✅ New client connected from ${req.socket.remoteAddress}`);
+
+  // Send a welcome message
+  ws.send("Welcome to the WebSocket server!");
+
+  // Log received messages
+  ws.on("message", (message) => {
+    console.log(`📩 Received: ${message}`);
+  });
+
+  // Log disconnections
+  ws.on("close", (code, reason) => {
+    console.log(`⚠️ Client disconnected. Code: ${code}, Reason: ${reason}`);
+  });
+
+  // Handle errors
+  ws.on("error", (err) => {
+    console.error("❌ WebSocket Error:", err);
+  });
+});
+
+// Broadcast function to notify all clients
+function broadcast(message) {
+  ws.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(message));
+    }
+  });
+}
 
 // 1) DB-Verbindung anpassen, wenn dein Port/DB anders ist
 const sequelize = new Sequelize(
@@ -61,7 +109,12 @@ const Task = sequelize.define(
     deletedAt: {
       type: DataTypes.DATE,
       allowNull: true
-    }
+    },
+      // Existing fields...
+      notified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
   },
   {
     timestamps: true
@@ -89,6 +142,43 @@ app.get('/tasks', async (req, res) => {
     res.status(500).json({ message: 'Fehler beim Abrufen der Tasks' })
   }
 })
+
+const cron = require("node-cron");
+const { Op } = require("sequelize");
+
+// Run every minute (adjust as needed)
+cron.schedule('* * * * *', async () => {
+  console.log('>>> Checking for overdue tasks...');
+
+  const now = new Date();
+  const overdueTasks = await Task.findAll({
+    where: {
+      deadline: { [Op.lte]: now },
+      status: "Offen",
+      notified: false
+    }
+  });
+
+  for (const task of overdueTasks) {
+    console.log(`>>> Sending WebSocket Notification: Task "${task.title}" is overdue!`);
+
+    // Send WebSocket notification
+    broadcast({
+      type: 'TASK_OVERDUE',
+      taskId: task.id,
+      title: task.title,
+      message: `Task "${task.title}" is overdue!`,
+      deadline: task.deadline
+    });
+
+    // Mark as notified
+    await task.update({ notified: true });
+  }
+
+  console.log(`>>> ${overdueTasks.length} notifications sent.`);
+});
+
+
 
 app.post('/tasks', async (req, res) => {
   try {

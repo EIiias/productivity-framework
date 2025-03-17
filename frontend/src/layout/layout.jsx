@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import AssistantWidget from '../assistantWidget/assistantWidget.jsx'
+import AssistantWidget from '../assistantWidget/AssistantWidget.jsx'
 import Modal from '../modal/modal.jsx'
 import '../layout/layout.css'
 

@@ -1,0 +1,438 @@
+/* layout.css */
+/* Wichtigste Änderung: weniger Padding in .topbar-row, weniger Gap in .topbar-left,
+   damit der Titel/Logo weiter links ist und die anderen Elemente rechts. */
+
+   :root {
+    --bg: #fff;
+    --white: #fff;
+    --dark-bg: #181818;
+    --dark-panel: #2b2b2b;
+    --dark-text: #f1f1f1;
+  
+    --color-text: #212529;
+    --color-primary: #0d6efd; /* dynamisch veränderbar */
+    --color-border: #dee2e6;
+    --radius: 8px;
+    --boxshadow: 0 2px 5px rgba(0,0,0,0.05);
+    --transition: 0.3s;
+  
+    /* Battery color */
+    --battery-color: #51cf66;
+  }
+  
+  .global-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--color-text);
+    transition: background var(--transition), color var(--transition);
+  }
+  .global-layout.dark-mode {
+    background: var(--dark-bg);
+    color: var(--dark-text);
+  }
+  
+  .topbar {
+    width: 100%;
+    background: var(--white);
+    box-shadow: var(--boxshadow);
+    transition: background var(--transition), color var(--transition);
+    position: relative;
+    z-index: 10;
+  }
+  .global-layout.dark-mode .topbar {
+    background: var(--dark-panel);
+    color: var(--dark-text);
+  }
+
+  .global-layout.dark-mode .topbar,
+  .global-layout.dark-mode .topbar * {
+    color: #f1f1f1 !important;
+  }
+  .global-layout.dark-mode .topbar-logo {
+    color: var(--color-primary) !important;
+  }
+  
+  /* Weniger Padding, damit alles weiter links ist */
+  .topbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.4rem; /* verringert */
+  }
+  
+  /* Sidebar Toggle Button */
+  .sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.2s, transform 0.2s;
+    margin-right: 0; /* kein extra Margin */
+  }
+  .sidebar-toggle-btn:hover {
+    transform: scale(1.1);
+    color: var(--color-primary);
+  }
+  .global-layout.dark-mode .sidebar-toggle-btn {
+    color: #ccc;
+  }
+  
+  /* Container für Logo + Tabs */
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* minimales Gap */
+  }
+  
+  /* Logo-Container */
+  .topbar-logo-container {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+  .topbar-logo-container:hover {
+    transform: scale(1.02);
+  }
+  .topbar-logo {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: var(--color-primary);
+    margin: 0;
+    line-height: 1.2;
+  }
+  .topbar-subtitle {
+    font-size: 0.75rem;
+    margin: 0.2rem 0 0;
+    color: var(--color-text);
+  }
+  
+  /* Tabs */
+  .topbar-tabs {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-left: 1rem; /* kleiner Abstand zum Logo */
+  }
+  .topbar-tabs button {
+    background: transparent;
+    border: none;
+    padding: 0.45rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: var(--radius);
+    color: var(--color-text);
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+  }
+  .topbar-tabs button:hover {
+    background: var(--color-primary);
+    color: #fff;
+    transform: scale(1.03);
+  }
+  .topbar-tabs button.active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .global-layout.dark-mode .topbar-tabs button:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  
+  /* Neuer Container für Battery & Avatar: topbar-right */
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .battery-widget {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .battery-icon {
+    width: 50px;
+    height: 24px;
+    border: 2px solid #999;
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+  }
+  .battery-icon::before {
+    content: '';
+    width: 6px;
+    height: 10px;
+    background: #999;
+    position: absolute;
+    top: 50%;
+    right: -6px;
+    transform: translateY(-50%);
+    border-radius: 2px;
+  }
+  .battery-level {
+    height: 100%;
+    background: var(--battery-color);
+    transition: width 0.3s;
+  }
+  .battery-info {
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+  .energy-slider {
+    width: 120px;
+    cursor: pointer;
+  }
+  
+  @keyframes wobble {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(2deg); }
+    50% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+    100% { transform: rotate(0deg); }
+  }
+  .battery-widget.wobble {
+    animation: wobble 0.5s ease;
+  }
+  
+  /* Darkmode Button (nur in Settings) */
+  .darkmode-btn {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.4rem 0.8rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.2s;
+  }
+  .darkmode-btn:hover {
+    background: rgba(13,110,253,0.75);
+    transform: scale(1.03);
+  }
+  
+  /* Avatar */
+  .topbar-user {
+    display: flex;
+    align-items: center;
+  }
+  .topbar-user .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  
+  .layout {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+  }
+  .widgets-column {
+    background: #f4f4f4;
+    box-shadow: inset -1px 0 0 #ccc;
+    overflow: hidden;
+  }
+  .global-layout.dark-mode .widgets-column {
+    background: var(--dark-panel);
+    box-shadow: inset -1px 0 0 #444;
+  }
+  .main-area {
+    flex: 1;
+    background: var(--white);
+    overflow-y: auto;
+    transition: background var(--transition), color var(--transition);
+  }
+  .global-layout.dark-mode .main-area {
+    background: var(--dark-bg);
+    color: var(--dark-text);
+  }
+  
+  @media (max-width: 768px) {
+    .layout {
+      position: relative;
+    }
+    .widgets-column {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      max-width: 100%;
+      overflow-y: auto;
+      z-index: 999;
+    }
+  }
+  
+  .widget-box {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--boxshadow);
+    margin-bottom: 1rem;
+    transition: background var(--transition), color var(--transition), transform 0.3s;
+  }
+  .global-layout.dark-mode .widget-box {
+    background: var(--dark-panel);
+    color: var(--dark-text);
+  }
+  .widget-box:hover {
+    transform: scale(1.01);
+  }
+  
+  .widget-header,
+  .widget-header-noncollapse {
+    background: var(--color-primary);
+    color: #fff;
+    padding: 0.6rem 0.8rem;
+  }
+  .widget-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .widget-header-noncollapse {
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+  }
+  .widget-toggle {
+    font-size: 1.2rem;
+  }
+  
+  .widget-content {
+    padding: 0.75rem 1rem 1rem;
+    background: inherit;
+    color: inherit;
+  }
+  
+  .focus-tasklist {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: #fafafa;
+    padding: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .global-layout.dark-mode .focus-tasklist {
+    background: #444;
+    border-color: #555;
+  }
+  .focus-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+  }
+  .focus-item span.done {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .focus-delete-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .focus-delete-btn:hover {
+    opacity: 0.7;
+  }
+  .focus-add-btn {
+    align-self: flex-start;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.2s;
+  }
+  .focus-add-btn:hover {
+    background: rgba(13,110,253,0.85);
+    transform: scale(1.03);
+  }
+  
+  .time-range-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .time-range-tabs button {
+    background: #ddd;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .time-range-tabs button.active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .time-range-tabs button:hover {
+    background: var(--color-primary);
+    color: #fff;
+    transform: scale(1.03);
+  }
+  
+  .mini-calendar-content {
+    padding: 0.5rem;
+  }
+  .mini-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.2rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  .mini-calendar-dayname {
+    font-weight: bold;
+    background: #eee;
+    color: #333;
+    padding: 0.2rem 0;
+    border-radius: var(--radius);
+  }
+  .mini-calendar-daycell {
+    background: #fff;
+    border: 1px solid #ddd;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    color: #333;
+  }
+  .mini-calendar-daycell:hover {
+    background: var(--color-primary);
+    color: #fff;
+    transform: scale(1.03);
+  }
+  .mini-calendar-today {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .has-deadline {
+    background: #ffe8a1;
+    color: #333;
+  }
+  .empty-cell {
+    background: transparent;
+    border: none;
+  }
+  
+  .widget-content label {
+    display: block;
+    margin-bottom: 1.2rem;
+  }
+  

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./login.css";
 import { Navigate, useNavigate } from "react-router-dom";
+import { Box, Button, Container, TextField, Paper, Typography, Link } from "@mui/material"
+import ReactLogo from "../assets/react.svg"
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -39,37 +41,30 @@ const Login = () => {
   };
 
   return (
-
-    <div className="loginContainer">
-      <div className="loginBox">
-        <h2 className="loginText">Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <input
-              type="email"
-              className="emailInput"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <input
-              type="password"
-              className="passwordInput"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-            />
-          </div>
-          <button type="submit" className="loginButton">
+    <Container maxWidth="xs" sx={{ bgcolor: "white", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2, width: "100%", height: 415 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 5 }}>
+          <img src={ReactLogo} alt="React Logo" width={60} />
+        </Box>
+        <Box component="form" onSubmit={handleLogin} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+          <TextField variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
+          <TextField variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
+          <Button variant="contained" type="submit" sx={{height: 50}}>
             Login
-          </button>
-        </form>
-      </div>
-    </div>
+          </Button>
+        </Box>
+        <Typography variant="body2" color="textSecondary" textAlign="center" sx={{ mt: 4 }}>
+          <Link href="#" underline="hover">
+            Forgot Password?
+          </Link>{" "}
+          |{" "}
+          <Link href="#" underline="hover">
+            Sign Up
+          </Link>
+        </Typography>
+
+      </Paper>
+    </Container>
   );
 };
 

@@ -4,6 +4,7 @@ import Layout from '../layout/layout.jsx'
 import Dashboard from '../dashboard/dashboard.jsx'
 import TasksPage from '../tasksPage/tasksPage.jsx'
 import NotFound from '../404/404.jsx'
+import Login from '../login/login.jsx'
 
 export default function App() {
   return (
@@ -15,10 +16,9 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<TasksPage />} />
         </Route>
-        {/* Dedizierte 404-Seite */}
-        <Route path="/404" element={<NotFound />} />
-        {/* Catch-all: Weiterleitung zu /404 */}
-        <Route path="*" element={<Navigate to="/404" replace />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   )

@@ -5,6 +5,7 @@ const cors = require('cors')
 const https = require('https');
 const WebSocket = require('ws');
 const fs = require('fs');
+var bcrypt = require('bcryptjs');
 
 const app = express()
 
@@ -178,7 +179,30 @@ cron.schedule('* * * * *', async () => {
   console.log(`>>> ${overdueTasks.length} notifications sent.`);
 });
 
+app.post('/register', async (req, res) => {
+  try {
+    const { email, password } = req.body
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    
+
+    res.status(201).json({ message: 'Register successful' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Register failed' })
+  }
+})
+
+app.post('/login', async (req, res) => {
+  try {
+    console.log("Test login")
+    res.status(201).json({ message: 'Login successful' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Login failed' })
+  }
+})
 
 app.post('/tasks', async (req, res) => {
   try {

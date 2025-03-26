@@ -6,7 +6,6 @@ const https = require('https');
 const WebSocket = require('ws');
 const fs = require('fs');
 var bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const app = express()
 
@@ -353,21 +352,3 @@ const PORT = process.env.PORT || 5002
 app.listen(PORT, () => {
   console.log(`>>> Server läuft auf Port ${PORT}`)
 })
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
-const JWT_EXPIRES_IN = '60d'; // Customize as needed
-
-function issueToken(user) {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
-}
-
-module.exports = {
-  issueToken
-};

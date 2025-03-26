@@ -1,15 +1,15 @@
 import { useState } from "react";
-import "./login.css";
+import "./signup.css";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Box, Button, Container, TextField, Paper, Typography, Link } from "@mui/material"
 import ReactLogo from "../assets/react.svg"
 
-const Login = () => {
+const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
 
     e.preventDefault();
 
@@ -46,20 +46,16 @@ const Login = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mb: 5 }}>
           <img src={ReactLogo} alt="React Logo" width={60} />
         </Box>
-        <Box component="form" onSubmit={handleLogin} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+        <Box component="form" onSubmit={handleSignup} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
           <TextField variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
           <TextField variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
           <Button variant="contained" type="submit" sx={{height: 50}}>
-            Login
+            Sign Up
           </Button>
         </Box>
         <Typography variant="body2" color="textSecondary" textAlign="center" sx={{ mt: 4 }}>
-          <Link href="#" underline="hover">
-            Forgot Password?
-          </Link>{" "}
-          |{" "}
-          <Link href="./signup" underline="hover">
-            Sign Up
+          <Link href="./login" underline="hover">
+            Looking for login?
           </Link>
         </Typography>
 
@@ -68,4 +64,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

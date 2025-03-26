@@ -5,6 +5,7 @@ import Dashboard from '../dashboard/dashboard.jsx'
 import TasksPage from '../tasksPage/tasksPage.jsx'
 import NotFound from '../404/404.jsx'
 import Login from '../login/login.jsx'
+import Signup from '../signup/signup.jsx'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         </Route>
 
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

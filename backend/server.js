@@ -6,6 +6,7 @@ const https = require('https');
 const WebSocket = require('ws');
 const fs = require('fs');
 var bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express()
 
@@ -58,7 +59,7 @@ function broadcast(message) {
   });
 }
 
-// 1) DB-Verbindung anpassen, wenn dein Port/DB anders ist
+// Connect to postgres
 const sequelize = new Sequelize(
   process.env.DATABASE_URL || 'postgres://taskdb:1234@localhost:5001/taskdb',
   {
@@ -67,13 +68,12 @@ const sequelize = new Sequelize(
   }
 )
 
-// 2) Verbindung testen
 sequelize
   .authenticate()
   .then(() => console.log('>>> Verbunden mit PostgreSQL.'))
   .catch((error) => console.error('Fehler beim Verbinden zu PostgreSQL:', error))
 
-// 3) Tabellenmodell für Task:
+// Create needed tables
 const Task = sequelize.define(
   'Task',
   {
@@ -122,7 +122,37 @@ const Task = sequelize.define(
   }
 )
 
-// 4) Sync mit alter:true, damit neue Spalten hinzukommen, falls schon Tabelle existiert
+const Users = sequelize.define(
+  'Users',
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4, // Automatically generates a UUID
+      primaryKey: true
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true
+      }
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    signupDate: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  },
+  {
+    timestamps: false
+  }
+);
+
+// Update DB if changes are present
 sequelize
   .sync({ alter: true })
   .then(() => {
@@ -185,7 +215,12 @@ app.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    
+    console.log(email)
+
+    const newUser = await Users.create({
+      email,
+      password: hashedPassword
+    })
 
     res.status(201).json({ message: 'Register successful' })
   } catch (error) {
@@ -196,13 +231,31 @@ app.post('/register', async (req, res) => {
 
 app.post('/login', async (req, res) => {
   try {
-    console.log("Test login")
-    res.status(201).json({ message: 'Login successful' })
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await Users.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    // Compare entered password with hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    // If valid, continue with login (e.g., send token, set session, etc.)
+    console.log("User logged in:", user.email);
+    res.status(200).json({ message: 'Login successful' });
+
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: 'Login failed' })
+    console.error(error);
+    res.status(500).json({ message: 'Login failed' });
   }
-})
+});
 
 app.post('/tasks', async (req, res) => {
   try {
@@ -300,3 +353,21 @@ const PORT = process.env.PORT || 5002
 app.listen(PORT, () => {
   console.log(`>>> Server läuft auf Port ${PORT}`)
 })
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+const JWT_EXPIRES_IN = '60d'; // Customize as needed
+
+function issueToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+module.exports = {
+  issueToken
+};

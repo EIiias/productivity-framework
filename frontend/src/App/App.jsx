@@ -1,8 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import Layout from '../layout/layout.jsx'
+import TopBar from '../layout/topbar.jsx'
 import Dashboard from '../dashboard/dashboard.jsx'
-import TasksPage from '../tasksPage/tasksPage.jsx'
 import NotFound from '../404/404.jsx'
 import Login from '../login/login.jsx'
 import Signup from '../signup/signup.jsx'
@@ -12,10 +11,9 @@ export default function App() {
     <Router>
       <Routes>
         {/* Routen, die das Layout verwenden */}
-        <Route element={<Layout />}>
+        <Route element={<TopBar />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tasks" element={<TasksPage />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

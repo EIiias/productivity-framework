@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./signup.css";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Box, Button, Container, TextField, Paper, Typography, Link } from "@mui/material"
 import ReactLogo from "../assets/react.svg"
@@ -15,7 +14,7 @@ const Signup = () => {
 
     try {
 
-      const res = await fetch(`http://localhost:5002/register`, {
+      const res = await fetch(`http://localhost:5002/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

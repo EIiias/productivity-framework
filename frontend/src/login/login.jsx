@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./login.css";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Box, Button, Container, TextField, Paper, Typography, Link } from "@mui/material"
 import ReactLogo from "../assets/react.svg"
@@ -9,13 +8,16 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  // function called on login
   const handleLogin = async (e) => {
 
+    // prevent things like no password, no username etc.
     e.preventDefault();
 
     try {
 
-      const res = await fetch(`http://localhost:5002/login`, {
+      // Call login on backend
+      const res = await fetch(`http://localhost:5002/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -26,8 +28,12 @@ const Login = () => {
         })
       });
       
+      // Check if login was successful
       if (res.ok) {
         alert("Called login")
+
+        // Redirect to homepage
+        navigate("/dashboard");
       } else {
         alert('Login failed')
       }
@@ -35,17 +41,20 @@ const Login = () => {
       console.error(err)
       alert('Something went wrong')
     }
-
-    console.log("Logging in with:", email, password);
-    navigate("/dashboard");
   };
 
   return (
+
+    // container for page
     <Container maxWidth="xs" sx={{ bgcolor: "white", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
       <Paper elevation={3} sx={{ padding: 4, borderRadius: 2, width: "100%", height: 415 }}>
+
+        {/* logo for login page */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 5 }}>
           <img src={ReactLogo} alt="React Logo" width={60} />
         </Box>
+
+        {/* form for login credentials */}
         <Box component="form" onSubmit={handleLogin} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
           <TextField value={email} onChange={(e) => setEmail(e.target.value)} variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
           <TextField value={password} onChange={(e) => setPassword(e.target.value)} variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
@@ -53,6 +62,8 @@ const Login = () => {
             Login
           </Button>
         </Box>
+
+        {/* forgot password / signup link */}
         <Typography variant="body2" color="textSecondary" textAlign="center" sx={{ mt: 4 }}>
           <Link href="#" underline="hover">
             Forgot Password?

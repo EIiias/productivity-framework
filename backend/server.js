@@ -5,6 +5,7 @@ const cors = require('cors')
 const https = require('https');
 const WebSocket = require('ws');
 const fs = require('fs');
+const jwt = require('jsonwebtoken')
 var bcrypt = require('bcryptjs');
 
 const app = express()
@@ -160,8 +161,10 @@ sequelize
   .catch((err) => console.error('>>> DB Sync-Fehler:', err))
 
 // =============== ROUTES ===============
-app.get('/tasks', async (req, res) => {
+app.get('/tasks', authenticateToken, async (req, res) => {
   try {
+
+    console.log("User ID from token:", req.userId);
     // Nur nicht-gelöschte Tasks
     const tasks = await Task.findAll({
       where: { deletedAt: null }
@@ -248,7 +251,8 @@ app.post('/login', async (req, res) => {
 
     // If valid, continue with login (e.g., send token, set session, etc.)
     console.log("User logged in:", user.email);
-    res.status(200).json({ message: 'Login successful' });
+    const accessToken = jwt.sign({ userId: user.id}, process.env.ACCESS_TOKEN_SECRET)
+    res.status(200).json({ accessToken: accessToken, message: 'Login successful' });
 
   } catch (error) {
     console.error(error);
@@ -352,3 +356,15 @@ const PORT = process.env.PORT || 5002
 app.listen(PORT, () => {
   console.log(`>>> Server läuft auf Port ${PORT}`)
 })
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if (token == null) return res.sendStatus(401)
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, id) => {
+      if (err) return res.sendStatus(403)
+        req.userId = id.userId
+        next()
+  })
+}

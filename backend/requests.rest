@@ -1,0 +1,12 @@
+POST http://localhost:5002/login
+Content-Type: application/json
+
+{
+    "email": "test@ksb.ch",
+    "password": "test"
+}
+
+###
+
+GET http://localhost:5002/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1sInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhOGE3ZTI1NC0wZWEzLTQ1OWUtOTIwYy03YWM3Yzc3OThjMGMiLCJpYXQiOjE3NDM3MTczMTF9.Wox7S9aQYvaepi9LDxqzCtJkvVoY0hoazfvlnrcsbTU

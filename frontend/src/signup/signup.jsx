@@ -47,8 +47,8 @@ const Signup = () => {
           <img src={ReactLogo} alt="React Logo" width={60} />
         </Box>
         <Box component="form" onSubmit={handleSignup} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-          <TextField variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
-          <TextField variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
+          <TextField value={email} onChange={(e) => setEmail(e.target.value)} variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
+          <TextField value={password} onChange={(e) => setPassword(e.target.value)} variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
           <Button variant="contained" type="submit" sx={{height: 50}}>
             Sign Up
           </Button>

@@ -15,7 +15,7 @@ const Login = () => {
 
     try {
 
-      const res = await fetch(`http://localhost:5002/register`, {
+      const res = await fetch(`http://localhost:5002/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -47,8 +47,8 @@ const Login = () => {
           <img src={ReactLogo} alt="React Logo" width={60} />
         </Box>
         <Box component="form" onSubmit={handleLogin} noValidate sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-          <TextField variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
-          <TextField variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
+          <TextField value={email} onChange={(e) => setEmail(e.target.value)} variant="outlined" label="Enter email" fullWidth  sx={{height: 50}}/>
+          <TextField value={password} onChange={(e) => setPassword(e.target.value)} variant="outlined" label="Enter password" type="password" fullWidth sx={{height: 50}} />
           <Button variant="contained" type="submit" sx={{height: 50}}>
             Login
           </Button>

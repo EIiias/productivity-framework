@@ -26,3 +26,6 @@ dist-ssr
 
 # Don't upload certs
 *.pem
+
+# Don't upload requests.rest
+**/requests.rest
